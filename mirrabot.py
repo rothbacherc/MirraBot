@@ -1,14 +1,11 @@
-#Version 1.2 Dev: Charles Rothbacher
+#Version 2.0 Dev: Charles Rothbacher
 
 import random
 import datetime
-import telepot
+#import telepot
 import time
 import pprint
-
-#telepot github: https://github.com/nickoala/telepot
-#thank you for providing this library and the example I built 
-#this project off of.
+import requests
 
 #there are built in functions and libraries that do similar things possibly
 #better, but this is a really simple funtion that takes only the punctuations
@@ -16,50 +13,56 @@ import pprint
 def textFormatter(text):
     punct = ['!','$','%','*','(',')','-',',','.','[',']','{','}','?','@']
     for i in punct:
-	text = text.replace(i,' ')
+        text = text.replace(i,' ')
     return text
 
+def sendText(chat_id, text):
+    sendURL = baseURL += 'sendMessage'
+    PARAMS = {'chat_id': chat_id, 'text': text}
+    result = requests.post(url = sendURL, params = PARAMS)
+
 def getPatchNotes(allNotes,chat_id):
-    outFile = open('####################.txt','r')
+    outFile = open('mirrabotPatchNotes.txt','r')
     #make a new string that will be combined with each line in the file
     #and allow them to be printed out all as is
     notesString = '*'
     for line in outFile:
-	notesString = notesString + line
+        notesString = notesString + line
     #finds the last * which denotes the beginning of a specific version
     if allNotes == False: 
         start = notesString.rfind('*')
     else:
-	start = 1
-    bot.sendMessage(chat_id, notesString[int(start):])
+        start = 1
+    sendText(chat_id, notesString[int(start):])      #fix here
     outFile.close()
 
 def writeIn(chat_id,text):
-    inFile = open('############################.txt','a+')
+    inFile = open('mirraism.txt','a+')
     inFile.write(text + '\n')
     inFile.close()
     #find out how long inFile is, have to open it again specifically for reading
-    inFile = open('################################.txt','r')
+    inFile = open('mirraism.txt','r')
     i = 0
     for line in inFile:
         i += 1
-    if i == 100 or i == 200 or i == 300 or i == 400 or i == 500:
-	#used double quotes to get around the apostrophe
-        bot.sendMessage(chat_id, "Sham bakkala! I've learned "+ str(i) +" phrases!")
+    if i % 100 == 0:
+        #used double quotes to get around the apostrophe
+        sendText(chat_id, "Sham bakkala! I've learned "+ str(i) +" phrases!")      #fix here
 
 
 def mirraSays(chat_id):
-    outFile = open('################################.txt','r')
+    outFile = open('mirraism.txt','r')
     length = 0
     mList = []
     for strLine in outFile:
         mList.append(strLine[:-1])
         length += 1
     ranNum = random.randint(0,length-1)
-    bot.sendMessage(chat_id, mList[ranNum])      #fix here
+    print length
+    sendText(chat_id, mList[ranNum]) #bot.sendMessage(chat_id, mList[ranNum])      #fix here
     outFile.close()
     
-def handle(msg):
+def handleMe(msg):
     user_name = msg['from']['username']
     user_id = msg['from']['id']
     text = msg['text']
@@ -73,52 +76,74 @@ def handle(msg):
     allNotes = False
 
     pprint.pprint(msg)
-    print '\n'
 
     #checks if this is a reply or not to use with teaching mirrabot phrases    
     if 'reply_to_message' in msg:
-	print 'in the if'
         replyText = msg['reply_to_message']['text']
-	replyName = msg['reply_to_message']['from']['username']
+        replyName = msg['reply_to_message']['from']['username']
 
     replaced = textFormatter(text)
     wordTest = replaced.split(' ')
 
     for i in wordTest:
-        if user_name == '#################' and (i == 'chicken' or i == 'apple'):
+        if user_name == mirra and (i == 'chicken' or i == 'apple'):
             inFlag = True
-	elif i == '/mirrasays':
-	    outFlag = True
-    
-    if text  == '/update' and user_name == '#####################':
-        bot.getUpdates
-    elif text == '/patchnotes' and user_name == '##################':
-	getPatchNotes(allNotes,chat_id)
-    elif text == '/allpatchnotes' and user_name == '###################':
-	allNotes = True
-	getPatchNotes(allNotes,chat_id)
+        elif i == '/mirrasays':
+            outFlag = True
+        
+    #if text  == '/update' and user_name == admin:       #fix here
+    #    bot.getUpdates
+    if text == '/patchnotes' and user_name == admin:
+        getPatchNotes(allNotes,chat_id)
+    elif text == '/allpatchnotes' and user_name == admin:
+        allNotes = True
+        getPatchNotes(allNotes,chat_id)
     elif text == '/mirrasays' or outFlag == True:
         mirraSays(chat_id)
-    elif text == '/mirralearns' and user_name != '##########' and replyName == '########':
-	inFile = open('######################.txt','r')
-	for strLine in inFile:
-	    print strLine[:-1]
-	    if strLine[:-1] == replyText:
-		hasLearned = True
-	inFile.close()
-	if hasLearned == True:
-	    bot.sendMessage(chat_id, 'I already knew that you butthead!')  #fix here
-	else:
-	    writeIn(chat_id,replyText)
-	    bot.sendMessage(chat_id,replyText)   #fix here
+    elif text == '/mirralearns' and user_name != mirra and replyName == mirra:
+        inFile = open('mirraism.txt','r')
+        for strLine in inFile:
+            if strLine[:-1] == replyText:
+                hasLearned = True
+        inFile.close()
+        if hasLearned == True:
+            sendText(chat_id, 'I already knew that you butthead!')               #fix here
+        else:
+            writeIn(chat_id,replyText)
+            sendText(chat_id,replyText)                                 #fix here
     else:
         if inFlag == True:
             writeIn(chat_id,text)
-        elif user_name == '#########################' and dice == 6 and len(text) > 10:
+        elif user_name == 'mirracles' and dice > 3 and len(text) > 10:
             writeIn(chat_id,text)
 
-bot = telepot.Bot('##################################################')
-bot.notifyOnMessage(handle)
+inFile = open('botKey.txt', 'r')
+key = inFile.readline()
+admin = inFile.readline()
+mirra = inFile.readline()
+inFile.close()
+
+baseURL = 'https://api.telegram.org/bot'
+baseURL += key + '/'
+
+#bot = telepot.Bot(key)
+#bot.notifyOnMessage(handleMe)
 
 while 1:
-    time.sleep(10)
+    try:
+        result = requests.get(url = baseURL + 'getUpdates', None)
+
+        # No sort. Trust server to give messages in correct order.
+        for msg in result:
+            handleMe(msg)
+
+    except exception.BadHTTPResponse as e:
+        traceback.print_exc()
+
+        # Servers probably down. Wait longer.
+        if e.status == 502:
+            time.sleep(30)
+    except:
+        traceback.print_exc()
+    finally:
+        time.sleep(10)
