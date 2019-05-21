@@ -1,11 +1,8 @@
 #Version 2.0 Dev: Charles Rothbacher
 
 import random
-import datetime
-#import telepot
-import time
-import pprint
 import requests
+from requests.exceptions import HTTPError
 
 #there are built in functions and libraries that do similar things possibly
 #better, but this is a really simple funtion that takes only the punctuations
@@ -17,9 +14,14 @@ def textFormatter(text):
     return text
 
 def sendText(chat_id, text):
-    sendURL = baseURL += 'sendMessage'
+    sendURL = baseURL 
+    sendURL += 'sendMessage'
     PARAMS = {'chat_id': chat_id, 'text': text}
-    result = requests.post(url = sendURL, params = PARAMS)
+    try:
+        requests.post(url = sendURL, params = PARAMS)
+        print("Send Worked")
+    except:
+        print("Send Broke")
 
 def getPatchNotes(allNotes,chat_id):
     outFile = open('mirrabotPatchNotes.txt','r')
@@ -39,28 +41,31 @@ def getPatchNotes(allNotes,chat_id):
 def writeIn(chat_id,text):
     inFile = open('mirraism.txt','a+')
     inFile.write(text + '\n')
+    mList.append(text)
+    length = len(mList) + 1
     inFile.close()
+    print(length)
     #find out how long inFile is, have to open it again specifically for reading
-    inFile = open('mirraism.txt','r')
-    i = 0
-    for line in inFile:
-        i += 1
-    if i % 100 == 0:
+    #inFile = open('mirraism.txt','r')
+    #i = 0
+    #for line in inFile:
+    #    i += 1
+    if length % 100 == 0:
         #used double quotes to get around the apostrophe
-        sendText(chat_id, "Sham bakkala! I've learned "+ str(i) +" phrases!")      #fix here
+        sendText(chat_id, "Sham bakkala! I've learned "+ str(length) +" phrases!")      #fix here
 
 
 def mirraSays(chat_id):
-    outFile = open('mirraism.txt','r')
-    length = 0
-    mList = []
-    for strLine in outFile:
-        mList.append(strLine[:-1])
-        length += 1
-    ranNum = random.randint(0,length-1)
-    print length
+    #outFile = open('mirraism.txt','r')
+    #length = 0
+    #mList = []
+    #for strLine in outFile:
+    #    mList.append(strLine[:-1])
+    #    length += 1
+    ranNum = random.randint(0,mLength-1)
+    #print(length)
     sendText(chat_id, mList[ranNum]) #bot.sendMessage(chat_id, mList[ranNum])      #fix here
-    outFile.close()
+    #outFile.close()
     
 def handleMe(msg):
     user_name = msg['from']['username']
@@ -75,7 +80,7 @@ def handleMe(msg):
     hasLearned = False
     allNotes = False
 
-    pprint.pprint(msg)
+    #pprint.pprint(msg)
 
     #checks if this is a reply or not to use with teaching mirrabot phrases    
     if 'reply_to_message' in msg:
@@ -117,33 +122,37 @@ def handleMe(msg):
         elif user_name == 'mirracles' and dice > 3 and len(text) > 10:
             writeIn(chat_id,text)
 
+offset = 0
 inFile = open('botKey.txt', 'r')
 key = inFile.readline()
 admin = inFile.readline()
 mirra = inFile.readline()
 inFile.close()
 
+outFile = open('mirraism.txt','r')
+mLength = 0
+mList = []
+for strLine in outFile:
+    mList.append(strLine[:-1])
+    mLength += 1
+outFile.close()
+
 baseURL = 'https://api.telegram.org/bot'
 baseURL += key + '/'
-
-#bot = telepot.Bot(key)
-#bot.notifyOnMessage(handleMe)
+print("I'm on!")
 
 while 1:
     try:
-        result = requests.get(url = baseURL + 'getUpdates', None)
-
-        # No sort. Trust server to give messages in correct order.
-        for msg in result:
-            handleMe(msg)
-
-    except exception.BadHTTPResponse as e:
-        traceback.print_exc()
-
-        # Servers probably down. Wait longer.
-        if e.status == 502:
-            time.sleep(30)
-    except:
-        traceback.print_exc()
-    finally:
-        time.sleep(10)
+        result = requests.post(url = baseURL + 'getUpdates', data={"offset": offset})
+        result.raise_for_status()
+        msgList = result.json()["result"]
+        if len(msgList) > 0:
+            offset = msgList[-1]["update_id"] + 1
+            for msg in msgList:
+                print(msg)
+                handleMe(msg['message'])
+    except HTTPError as http_err:
+        print("It broke")
+    except KeyboardInterrupt as e:
+        print("End")
+        break
