@@ -42,7 +42,7 @@ class mirrabot:
         ranNum = random.randint(0,self.mLength-1)
         return self.sendText(chat_id, self.mList[ranNum]) 
 
-    def handleMe(self, msg, admin, mirra):
+    def handleMe(self, msg, mirra):
         if 'text' in msg:
             user_name = msg['from']['username']
             text = msg['text']
@@ -83,6 +83,6 @@ class mirrabot:
             else:
                 if inFlag == True:
                     self.writeIn(chat_id,text)
-                elif user_name == 'mirracles' and dice > 3 and len(text) > 10:
+                elif user_name == mirra and dice > 3 and len(text) > 10:
                     self.writeIn(chat_id,text)
                 return None

@@ -6,9 +6,9 @@ if __name__ == "__main__":
     botBoi = mirrabot()
     offset = 0
     inFile = open('botKey.txt', 'r')
-    key = inFile.readline()
-    admin = inFile.readline()
-    mirra = inFile.readline()
+    line = inFile.readline().split(',')
+    key = line[0]
+    mirra = line[1]
     inFile.close()
     baseURL = 'https://api.telegram.org/bot'
     baseURL += key + '/'
@@ -23,7 +23,7 @@ if __name__ == "__main__":
                 offset = msgList[-1]["update_id"] + 1
                 for msg in msgList:
                     print(msg)
-                    result = botBoi.handleMe(msg['message'], admin, mirra)
+                    result = botBoi.handleMe(msg['message'], mirra)
                     if result:
                         try:
                             requests.post(url = sendURL, params = result)
