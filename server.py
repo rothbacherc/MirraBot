@@ -15,16 +15,21 @@ if __name__ == "__main__":
     sendURL = baseURL + "sendMessage"
     print("I'm on!")
     while 1:
+        result = None
         try:
-            result = requests.post(url = baseURL + 'getUpdates', data={"offset": offset})
-            result.raise_for_status()
-            msgList = result.json()["result"]
+            data = requests.post(url = baseURL + 'getUpdates', data={"offset": offset})
+            data.raise_for_status()
+            msgList = data.json()["result"]
             if len(msgList) > 0:
                 offset = msgList[-1]["update_id"] + 1
                 for msg in msgList:
                     print(msg)
-                    result = botBoi.handleMe(msg['message'], mirra)
-                    if result:
+                    if('message' in msg):
+                        result = botBoi.handleMe(msg['message'], mirra)
+                    elif('edited_message' in msg):
+                        result = botBoi.handleMe(msg['edited_message'], mirra)
+
+                    if result != None:
                         try:
                             requests.post(url = sendURL, params = result)
                         except HTTPError as http_err:
@@ -32,5 +37,8 @@ if __name__ == "__main__":
         except HTTPError as http_err:
             print("Update broke")
         except KeyboardInterrupt as e:
-            print("End")
+            print("Force End")
             break
+        except Exception as e:
+            print("Unkown error")
+            print(e)
